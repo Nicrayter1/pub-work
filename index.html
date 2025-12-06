@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Учет стоков бара</title>
-    <!-- Подключаем Supabase JS клиент -->
+    <!-- Подключаем Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Ваш существующий CSS остается без изменений */
+        /* ВАШ CSS БЕЗ ИЗМЕНЕНИЙ */
         * { 
             box-sizing: border-box; 
             margin: 0; 
@@ -37,9 +37,296 @@
             color: #333; 
         }
         
-        /* ... остальной ваш CSS остается без изменений ... */
+        /* Поиск */
+        .search-container { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            background: white; 
+            padding: 8px 0 10px 0; 
+            margin-bottom: 8px;
+        }
         
-        /* Стили для уведомлений */
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            background: #f8f9fa;
+        }
+        
+        /* Таблица - компактная */
+        .table-container { 
+            overflow-x: auto; 
+            margin-bottom: 15px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 360px;
+            font-size: 13px;
+        }
+        
+        th, td { 
+            padding: 6px 4px; 
+            border-bottom: 1px solid #e0e0e0; 
+            text-align: left;
+            vertical-align: middle;
+        }
+        
+        th { 
+            background: #f8f9fa; 
+            font-weight: 600; 
+            color: #555; 
+            font-size: 12px;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        
+        /* Колонки */
+        .name-col { 
+            width: 45%; 
+            min-width: 140px;
+            padding-right: 2px;
+        }
+        
+        .volume-col { 
+            width: 15%; 
+            min-width: 50px;
+            padding-right: 2px;
+        }
+        
+        .bar-col { 
+            width: 20%; 
+            min-width: 70px;
+            text-align: center !important;
+        }
+        
+        /* Категория */
+        .category-header { 
+            background: #e8f4ff; 
+            font-weight: 600; 
+            color: #1976d2; 
+            font-size: 13px;
+        }
+        
+        /* Ячейки с кнопками - компактные */
+        .number-cell {
+            padding: 2px 4px !important;
+            text-align: center;
+        }
+        
+        .number-btn {
+            width: 100%;
+            min-height: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .number-btn:hover, .number-btn:active {
+            background: #f0f0f0;
+            border-color: #007AFF;
+        }
+        
+        /* Кнопки действий */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: calc(50% - 4px);
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-title {
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* Адаптация для iPhone 12 (375x812) */
+        @media (max-width: 390px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            th, td {
+                padding: 4px 3px;
+                font-size: 12px;
+            }
+            
+            .name-col {
+                min-width: 120px;
+            }
+            
+            .number-btn {
+                min-height: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            
+            .action-btn {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Темная тема для OLED */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #000;
+                color: #fff;
+            }
+            
+            .container {
+                background: #1c1c1e;
+            }
+            
+            .search-input {
+                background: #2c2c2e;
+                border-color: #3a3a3c;
+                color: #fff;
+            }
+            
+            table {
+                border-color: #3a3a3c;
+            }
+            
+            th {
+                background: #2c2c2e;
+                color: #8e8e93;
+            }
+            
+            td {
+                border-color: #3a3a3c;
+            }
+            
+            .category-header {
+                background: #2c2c2e;
+                color: #0a84ff;
+            }
+            
+            .number-btn {
+                background: #2c2c2e;
+                border-color: #3a3a3c;
+                color: #fff;
+            }
+            
+            .modal-content {
+                background: #1c1c1e;
+                color: #fff;
+            }
+            
+            .form-input {
+                background: #2c2c2e;
+                border-color: #3a3a3c;
+                color: #fff;
+            }
+        }
+        
+        /* Уведомления */
         .notification {
             position: fixed;
             top: 20px;
@@ -179,12 +466,17 @@
 
     <script>
         // === КОНФИГУРАЦИЯ SUPABASE ===
-        // ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ НА ВАШИ ДАННЫЕ С SUPABASE
-        const SUPABASE_URL = 'https://lmysveosqckpbyuldiym.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteXN2ZW9zcWNrcGJ5dWxkaXltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTMxNTksImV4cCI6MjA4MDM4OTE1OX0.z1i_Fi7uCXnX3cml7RbTHR6RxIrxVY947iOCTi80fQY';
+        // ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ НА ВАШИ ДАННЫЕ!
+        const SUPABASE_URL = 'https://ваш-project-id.supabase.co';
+        const SUPABASE_ANON_KEY = 'ваш-anon-key';
         
-        // Инициализация Supabase клиента
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Инициализация Supabase
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.error('Ошибка инициализации Supabase:', error);
+        }
         
         // Структура данных
         let stockData = {
@@ -194,21 +486,51 @@
         
         let currentEdit = { type: '', index: -1, field: '' };
         let addModalType = 'product';
-
-        // === УТИЛИТЫ ===
+        
+        // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+        
         function showNotification(message, type = 'info', duration = 3000) {
             const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = 'notification ' + type;
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, duration);
+            if (notification) {
+                notification.textContent = message;
+                notification.className = 'notification ' + type;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, duration);
+            }
         }
-
+        
+        // === РАБОТА С ЛОКАЛЬНЫМ ХРАНИЛИЩЕМ ===
+        
+        function saveData() {
+            try {
+                localStorage.setItem('barStockData', JSON.stringify(stockData));
+                showNotification('Данные успешно сохранены локально!', 'success');
+                return true;
+            } catch (error) {
+                showNotification('Ошибка сохранения: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('barStockData');
+                if (saved) {
+                    stockData = JSON.parse(saved);
+                    initTable();
+                    return true;
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+            return false;
+        }
+        
         // === РАБОТА С SUPABASE ===
         
-        // Загрузка данных из Supabase
         async function loadFromSupabase() {
             try {
                 showNotification('Загрузка данных из базы...', 'info');
@@ -229,44 +551,32 @@
                 
                 if (prodError) throw prodError;
                 
-                // Преобразуем данные в наш формат
-                stockData.categories = categories.map(cat => ({
-                    id: cat.id,
-                    name: cat.name,
-                    order_index: cat.order_index
-                }));
-                
+                // Форматируем данные
+                stockData.categories = categories;
                 stockData.products = products.map(prod => {
                     const category = categories.find(cat => cat.id === prod.category_id);
                     return {
-                        id: prod.id,
-                        category_id: prod.category_id,
-                        category_name: category ? category.name : 'Без категории',
-                        name: prod.name,
-                        volume: prod.volume,
-                        bar1: prod.bar1 || 0,
-                        bar2: prod.bar2 || 0
+                        ...prod,
+                        category_name: category ? category.name : 'Без категории'
                     };
                 });
                 
                 initTable();
+                saveData(); // Сохраняем локально как кэш
                 showNotification('Данные успешно загружены!', 'success');
                 
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
-                showNotification('Ошибка загрузки данных: ' + error.message, 'error');
-                
-                // Пробуем загрузить из localStorage
-                loadData();
+                showNotification('Ошибка загрузки из БД. Используем локальные данные', 'error');
+                loadData(); // Загружаем из localStorage
             }
         }
-
-        // Сохранение данных в Supabase
+        
         async function saveToSupabase() {
             try {
-                showNotification('Сохранение данных...', 'info');
+                showNotification('Сохранение в базу данных...', 'info');
                 
-                // Обновляем каждый продукт в базе
+                // Обновляем каждый продукт
                 for (const product of stockData.products) {
                     const { error } = await supabase
                         .from('products')
@@ -286,80 +596,15 @@
                 showNotification('Ошибка сохранения: ' + error.message, 'error');
             }
         }
-
-        // Добавление нового продукта в Supabase
-        async function addProductToSupabase(product) {
-            try {
-                // Находим категорию по имени
-                const category = stockData.categories.find(cat => 
-                    cat.name.toLowerCase() === product.category.toLowerCase()
-                );
-                
-                let categoryId;
-                
-                if (category) {
-                    categoryId = category.id;
-                } else {
-                    // Создаем новую категорию
-                    const maxOrder = Math.max(...stockData.categories.map(c => c.order_index), 0);
-                    const { data: newCategory, error: catError } = await supabase
-                        .from('categories')
-                        .insert({
-                            name: product.category,
-                            order_index: maxOrder + 1
-                        })
-                        .select()
-                        .single();
-                    
-                    if (catError) throw catError;
-                    
-                    categoryId = newCategory.id;
-                    stockData.categories.push(newCategory);
-                }
-                
-                // Создаем продукт
-                const { data: newProduct, error: prodError } = await supabase
-                    .from('products')
-                    .insert({
-                        category_id: categoryId,
-                        name: product.name,
-                        volume: product.volume,
-                        bar1: 0,
-                        bar2: 0
-                    })
-                    .select()
-                    .single();
-                
-                if (prodError) throw prodError;
-                
-                // Добавляем продукт в локальные данные
-                stockData.products.push({
-                    ...newProduct,
-                    category_name: product.category
-                });
-                
-                return true;
-                
-            } catch (error) {
-                console.error('Ошибка добавления продукта:', error);
-                throw error;
-            }
-        }
-
-        // Синхронизация с Supabase
+        
         async function syncWithSupabase() {
-            const confirmed = confirm(
-                'Синхронизация загрузит данные из базы и перезапишет локальные изменения. Продолжить?'
-            );
-            
-            if (confirmed) {
+            if (confirm('Загрузить данные из базы? Текущие изменения будут потеряны.')) {
                 await loadFromSupabase();
             }
         }
-
-        // === ОСНОВНЫЕ ФУНКЦИИ ===
         
-        // Инициализация таблицы
+        // === ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА ===
+        
         function initTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -368,22 +613,15 @@
             const productsByCategory = {};
             
             stockData.products.forEach(product => {
-                const categoryName = product.category_name || product.category;
+                const categoryName = product.category_name || 'Без категории';
                 if (!productsByCategory[categoryName]) {
                     productsByCategory[categoryName] = [];
                 }
                 productsByCategory[categoryName].push(product);
             });
             
-            // Сортируем категории по order_index или алфавиту
-            const sortedCategories = Object.keys(productsByCategory).sort((a, b) => {
-                const catA = stockData.categories.find(c => c.name === a);
-                const catB = stockData.categories.find(c => c.name === b);
-                return (catA?.order_index || 999) - (catB?.order_index || 999);
-            });
-            
             // Заполняем таблицу
-            sortedCategories.forEach(categoryName => {
+            Object.keys(productsByCategory).forEach(categoryName => {
                 // Заголовок категории
                 const categoryRow = document.createElement('tr');
                 categoryRow.className = 'category-header';
@@ -417,11 +655,10 @@
                 });
             });
             
-            // Обновляем список категорий в селекте
+            // Обновляем список категорий
             updateCategorySelect();
         }
-
-        // Обновление списка категорий
+        
         function updateCategorySelect() {
             const select = document.getElementById('addCategory');
             select.innerHTML = '<option value="">Выберите категорию</option>';
@@ -433,8 +670,7 @@
                 select.appendChild(option);
             });
         }
-
-        // Поиск
+        
         function setupSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('input', function() {
@@ -470,8 +706,7 @@
                 });
             });
         }
-
-        // Открытие модального окна для ввода числа
+        
         function openNumberInput(index, field, title) {
             currentEdit = { type: 'product', index, field };
             document.getElementById('modalTitle').textContent = title;
@@ -479,8 +714,7 @@
             document.getElementById('numberModal').style.display = 'flex';
             document.getElementById('numberInput').focus();
         }
-
-        // Подтверждение ввода числа
+        
         function confirmNumber() {
             let value = document.getElementById('numberInput').value.trim();
             value = value.replace(',', '.');
@@ -500,14 +734,12 @@
             
             closeModal();
         }
-
-        // Закрытие модального окна
+        
         function closeModal() {
             document.getElementById('numberModal').style.display = 'none';
             currentEdit = { type: '', index: -1, field: '' };
         }
-
-        // Открытие модального окна добавления
+        
         function openAddModal(type) {
             addModalType = type;
             const modal = document.getElementById('addModal');
@@ -531,14 +763,12 @@
             
             modal.style.display = 'flex';
         }
-
-        // Закрытие модального окна добавления
+        
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
         }
-
-        // Добавление элемента
-        async function addItem() {
+        
+        function addItem() {
             const category = document.getElementById('addCategory').value.trim();
             const name = document.getElementById('addName').value.trim();
             const volume = document.getElementById('addVolume').value;
@@ -549,36 +779,25 @@
             }
             
             if (addModalType === 'category') {
-                // Добавление категории
+                // Проверяем, есть ли уже такая категория
                 const categoryExists = stockData.categories.some(c => 
                     c.name.toLowerCase() === category.toLowerCase()
                 );
                 
                 if (!categoryExists) {
-                    try {
-                        const maxOrder = Math.max(...stockData.categories.map(c => c.order_index), 0);
-                        const { data: newCategory, error } = await supabase
-                            .from('categories')
-                            .insert({
-                                name: category,
-                                order_index: maxOrder + 1
-                            })
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        stockData.categories.push(newCategory);
-                        updateCategorySelect();
-                        showNotification(`Категория "${category}" добавлена`, 'success');
-                    } catch (error) {
-                        showNotification('Ошибка добавления категории: ' + error.message, 'error');
-                    }
+                    const newCategory = {
+                        id: Date.now(), // Временный ID
+                        name: category,
+                        order_index: stockData.categories.length + 1
+                    };
+                    
+                    stockData.categories.push(newCategory);
+                    updateCategorySelect();
+                    showNotification(`Категория "${category}" добавлена`, 'success');
                 } else {
                     alert('Такая категория уже существует');
                 }
             } else {
-                // Добавление продукта
                 if (!name) {
                     alert('Пожалуйста, введите название продукта');
                     return;
@@ -589,57 +808,41 @@
                     return;
                 }
                 
-                try {
-                    const productData = {
-                        category: category,
-                        name: name,
-                        volume: parseInt(volume),
-                        bar1: 0,
-                        bar2: 0
-                    };
-                    
-                    await addProductToSupabase(productData);
-                    
-                    initTable();
-                    showNotification(`Продукт "${name}" добавлен`, 'success');
-                } catch (error) {
-                    showNotification('Ошибка добавления продукта: ' + error.message, 'error');
+                // Находим категорию
+                const categoryObj = stockData.categories.find(c => 
+                    c.name.toLowerCase() === category.toLowerCase()
+                );
+                
+                if (!categoryObj) {
+                    alert('Категория не найдена');
+                    return;
                 }
+                
+                // Добавляем продукт
+                const newProduct = {
+                    id: Date.now(), // Временный ID
+                    category_id: categoryObj.id,
+                    name: name,
+                    volume: parseInt(volume),
+                    bar1: 0,
+                    bar2: 0,
+                    category_name: category
+                };
+                
+                stockData.products.push(newProduct);
+                initTable();
+                showNotification(`Продукт "${name}" добавлен`, 'success');
             }
             
             closeAddModal();
         }
-
-        // Сохранение данных локально
-        function saveData() {
-            localStorage.setItem('barStockData_backup', JSON.stringify(stockData));
-            showNotification('Данные сохранены локально!', 'success', 2000);
-        }
-
-        // Загрузка данных локально
-        function loadData() {
-            const saved = localStorage.getItem('barStockData_backup');
-            if (saved) {
-                try {
-                    const savedData = JSON.parse(saved);
-                    if (savedData.products && savedData.products.length > 0) {
-                        stockData = savedData;
-                        initTable();
-                        showNotification('Локальные данные загружены', 'info');
-                    }
-                } catch (e) {
-                    console.error('Ошибка загрузки данных:', e);
-                }
-            }
-        }
-
-        // Экспорт в CSV
+        
         function exportData() {
             const BOM = '\uFEFF';
             let csv = BOM + 'Категория;Наименование;Тара мл;Бар 1 (Факт);Бар 2 (Факт)\r\n';
             
             stockData.products.forEach(product => {
-                const category = `"${(product.category_name || product.category).replace(/"/g, '""')}"`;
+                const category = `"${(product.category_name || 'Без категории').replace(/"/g, '""')}"`;
                 const name = `"${product.name.replace(/"/g, '""')}"`;
                 const bar1 = (product.bar1 || 0).toString().replace(',', '.');
                 const bar2 = (product.bar2 || 0).toString().replace(',', '.');
@@ -659,36 +862,30 @@
             
             showNotification('CSV файл скачивается...', 'success');
         }
-
-        // Инициализация
+        
+        // === ИНИЦИАЛИЗАЦИЯ ===
         window.onload = async function() {
-            // Показываем уведомление о загрузке
-            showNotification('Инициализация приложения...', 'info');
-            
-            // Сначала пробуем загрузить из Supabase
-            await loadFromSupabase();
-            
-            // Если не удалось загрузить из Supabase, грузим локальные данные
-            if (stockData.products.length === 0) {
-                loadData();
+            // Сначала пробуем загрузить локальные данные
+            if (!loadData() || stockData.products.length === 0) {
+                // Если нет локальных данных, пробуем загрузить из Supabase
+                if (supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                    await loadFromSupabase();
+                } else {
+                    // Если нет Supabase, показываем пустую таблицу
+                    showNotification('Настройте подключение к Supabase', 'info');
+                    initTable();
+                }
             }
             
-            initTable();
             setupSearch();
             
-            // Закрытие модальных окон при клике вне их
+            // Закрытие модальных окон
             window.onclick = function(event) {
-                const modals = ['numberModal', 'addModal'];
-                modals.forEach(modalId => {
-                    const modal = document.getElementById(modalId);
-                    if (event.target === modal) {
-                        if (modalId === 'numberModal') closeModal();
-                        if (modalId === 'addModal') closeAddModal();
-                    }
-                });
+                if (event.target.id === 'numberModal') closeModal();
+                if (event.target.id === 'addModal') closeAddModal();
             };
             
-            // Обработка Enter/Escape
+            // Обработка клавиш
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
                     if (document.getElementById('numberModal').style.display === 'flex') {
