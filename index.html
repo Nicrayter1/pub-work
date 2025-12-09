@@ -68,7 +68,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 360px;
+            min-width: 460px; /* Увеличили минимальную ширину из-за дополнительного столбца */
             font-size: 13px;
         }
         
@@ -91,20 +91,20 @@
         
         /* Колонки */
         .name-col { 
-            width: 45%; 
-            min-width: 140px;
+            width: 35%; /* Уменьшили ширину из-за дополнительного столбца */
+            min-width: 120px;
             padding-right: 2px;
         }
         
         .volume-col { 
-            width: 15%; 
+            width: 12%; /* Уменьшили ширину из-за дополнительного столбца */
             min-width: 50px;
             padding-right: 2px;
         }
         
         .bar-col { 
-            width: 20%; 
-            min-width: 70px;
+            width: 17%; /* Уменьшили ширину из-за дополнительного столбца */
+            min-width: 60px;
             text-align: center !important;
         }
         
@@ -258,7 +258,7 @@
             }
             
             .name-col {
-                min-width: 120px;
+                min-width: 100px;
             }
             
             .number-btn {
@@ -270,6 +270,10 @@
             .action-btn {
                 padding: 8px 10px;
                 font-size: 12px;
+            }
+            
+            table {
+                min-width: 400px; /* Адаптировали для мобильных */
             }
         }
         
@@ -397,6 +401,7 @@
                         <th class="volume-col">Тара, мл</th>
                         <th class="bar-col">Бар 1 (Факт)</th>
                         <th class="bar-col">Бар 2 (Факт)</th>
+                        <th class="bar-col">Холод. комната (Факт)</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -557,7 +562,8 @@
                     const category = categories.find(cat => cat.id === prod.category_id);
                     return {
                         ...prod,
-                        category_name: category ? category.name : 'Без категории'
+                        category_name: category ? category.name : 'Без категории',
+                        cold_room: prod.cold_room || 0 // Добавляем поле cold_room с значением по умолчанию 0
                     };
                 });
                 
@@ -582,7 +588,8 @@
                         .from('products')
                         .update({
                             bar1: product.bar1,
-                            bar2: product.bar2
+                            bar2: product.bar2,
+                            cold_room: product.cold_room || 0 // Добавляем сохранение cold_room
                         })
                         .eq('id', product.id);
                     
@@ -625,7 +632,7 @@
                 // Заголовок категории
                 const categoryRow = document.createElement('tr');
                 categoryRow.className = 'category-header';
-                categoryRow.innerHTML = `<td colspan="4">${categoryName}</td>`;
+                categoryRow.innerHTML = `<td colspan="5">${categoryName}</td>`; // Изменено с 4 на 5 из-за добавления столбца
                 tbody.appendChild(categoryRow);
                 
                 // Продукты категории
@@ -633,6 +640,7 @@
                     const globalIndex = stockData.products.findIndex(p => p.id === product.id);
                     const bar1Display = product.bar1 === 0 ? '0' : product.bar1.toString();
                     const bar2Display = product.bar2 === 0 ? '0' : product.bar2.toString();
+                    const coldRoomDisplay = (product.cold_room === 0 || !product.cold_room) ? '0' : product.cold_room.toString();
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -648,6 +656,12 @@
                             <button class="number-btn" 
                                     onclick="openNumberInput(${globalIndex}, 'bar2', '${product.name} - Бар 2')">
                                 ${bar2Display}
+                            </button>
+                        </td>
+                        <td class="bar-col number-cell">
+                            <button class="number-btn" 
+                                    onclick="openNumberInput(${globalIndex}, 'cold_room', '${product.name} - Холод. комната')">
+                                ${coldRoomDisplay}
                             </button>
                         </td>
                     `;
@@ -826,6 +840,7 @@
                     volume: parseInt(volume),
                     bar1: 0,
                     bar2: 0,
+                    cold_room: 0, // Добавляем поле cold_room с значением по умолчанию 0
                     category_name: category
                 };
                 
@@ -839,14 +854,15 @@
         
         function exportData() {
             const BOM = '\uFEFF';
-            let csv = BOM + 'Категория;Наименование;Тара мл;Бар 1 (Факт);Бар 2 (Факт)\r\n';
+            let csv = BOM + 'Категория;Наименование;Тара мл;Бар 1 (Факт);Бар 2 (Факт);Холод. комната (Факт)\r\n';
             
             stockData.products.forEach(product => {
                 const category = `"${(product.category_name || 'Без категории').replace(/"/g, '""')}"`;
                 const name = `"${product.name.replace(/"/g, '""')}"`;
                 const bar1 = (product.bar1 || 0).toString().replace(',', '.');
                 const bar2 = (product.bar2 || 0).toString().replace(',', '.');
-                csv += `${category};${name};${product.volume};${bar1};${bar2}\r\n`;
+                const cold_room = (product.cold_room || 0).toString().replace(',', '.');
+                csv += `${category};${name};${product.volume};${bar1};${bar2};${cold_room}\r\n`;
             });
             
             const blob = new Blob([csv], { 
