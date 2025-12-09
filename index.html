@@ -68,7 +68,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 460px; /* Увеличили минимальную ширину из-за дополнительного столбца */
+            min-width: 460px;
             font-size: 13px;
         }
         
@@ -91,19 +91,19 @@
         
         /* Колонки */
         .name-col { 
-            width: 35%; /* Уменьшили ширину из-за дополнительного столбца */
+            width: 35%;
             min-width: 120px;
             padding-right: 2px;
         }
         
         .volume-col { 
-            width: 12%; /* Уменьшили ширину из-за дополнительного столбца */
+            width: 12%;
             min-width: 50px;
             padding-right: 2px;
         }
         
         .bar-col { 
-            width: 17%; /* Уменьшили ширину из-за дополнительного столбца */
+            width: 17%;
             min-width: 60px;
             text-align: center !important;
         }
@@ -273,7 +273,7 @@
             }
             
             table {
-                min-width: 400px; /* Адаптировали для мобильных */
+                min-width: 400px;
             }
         }
         
@@ -429,7 +429,7 @@
             <div style="text-align: center; margin-bottom: 15px; color: #666; font-size: 13px;">
                 Используйте точку для дробей: 0.5 или 1.5
             </div>
-            <input type="number" step="0.1" class="form-input" id="numberInput" 
+            <input type="text" class="form-input" id="numberInput" 
                    inputmode="decimal" placeholder="0" autofocus>
             <div class="modal-buttons">
                 <button class="action-btn btn-secondary" onclick="closeModal()">Отмена</button>
@@ -471,7 +471,6 @@
 
     <script>
         // === КОНФИГУРАЦИЯ SUPABASE ===
-        // ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ НА ВАШИ ДАННЫЕ!
         const SUPABASE_URL = 'https://lmysveosqckpbyuldiym.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteXN2ZW9zcWNrcGJ5dWxkaXltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTMxNTksImV4cCI6MjA4MDM4OTE1OX0.z1i_Fi7uCXnX3cml7RbTHR6RxIrxVY947iOCTi80fQY';
         
@@ -504,6 +503,46 @@
                 setTimeout(() => {
                     notification.style.display = 'none';
                 }, duration);
+            }
+        }
+        
+        // Функция для замены запятой на точку в реальном времени
+        function replaceCommaWithDot(e) {
+            // Сохраняем позицию курсора
+            const cursorPosition = e.target.selectionStart;
+            const originalValue = e.target.value;
+            
+            // Заменяем все запятые на точки
+            let newValue = originalValue.replace(/,/g, '.');
+            
+            // Обновляем значение только если оно изменилось
+            if (newValue !== originalValue) {
+                e.target.value = newValue;
+                // Восстанавливаем позицию курсора
+                e.target.setSelectionRange(cursorPosition, cursorPosition);
+            }
+        }
+        
+        // Функция для валидации ввода - запрет запятой
+        function validateNumberInput(e) {
+            // Блокируем ввод запятой
+            if (e.key === ',') {
+                e.preventDefault();
+                
+                // Вставляем точку вместо запятой
+                const input = e.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const value = input.value;
+                
+                input.value = value.substring(0, start) + '.' + value.substring(end);
+                input.setSelectionRange(start + 1, start + 1);
+            }
+            
+            // Разрешаем: цифры, точка, backspace, delete, стрелки, tab, enter
+            if (!/[\d\.]|Backspace|Delete|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Tab|Enter/.test(e.key) && 
+                !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
             }
         }
         
@@ -563,18 +602,18 @@
                     return {
                         ...prod,
                         category_name: category ? category.name : 'Без категории',
-                        cold_room: prod.cold_room || 0 // Добавляем поле cold_room с значением по умолчанию 0
+                        cold_room: prod.cold_room || 0
                     };
                 });
                 
                 initTable();
-                saveData(); // Сохраняем локально как кэш
+                saveData();
                 showNotification('Данные успешно загружены!', 'success');
                 
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
                 showNotification('Ошибка загрузки из БД. Используем локальные данные', 'error');
-                loadData(); // Загружаем из localStorage
+                loadData();
             }
         }
         
@@ -589,7 +628,7 @@
                         .update({
                             bar1: product.bar1,
                             bar2: product.bar2,
-                            cold_room: product.cold_room || 0 // Добавляем сохранение cold_room
+                            cold_room: product.cold_room || 0
                         })
                         .eq('id', product.id);
                     
@@ -632,7 +671,7 @@
                 // Заголовок категории
                 const categoryRow = document.createElement('tr');
                 categoryRow.className = 'category-header';
-                categoryRow.innerHTML = `<td colspan="5">${categoryName}</td>`; // Изменено с 4 на 5 из-за добавления столбца
+                categoryRow.innerHTML = `<td colspan="5">${categoryName}</td>`;
                 tbody.appendChild(categoryRow);
                 
                 // Продукты категории
@@ -724,14 +763,28 @@
         function openNumberInput(index, field, title) {
             currentEdit = { type: 'product', index, field };
             document.getElementById('modalTitle').textContent = title;
-            document.getElementById('numberInput').value = stockData.products[index][field] || '';
+            
+            // Получаем текущее значение и заменяем запятую на точку
+            let currentValue = stockData.products[index][field] || '';
+            if (currentValue !== '') {
+                currentValue = currentValue.toString().replace(/,/g, '.');
+            }
+            
+            document.getElementById('numberInput').value = currentValue;
             document.getElementById('numberModal').style.display = 'flex';
             document.getElementById('numberInput').focus();
+            
+            // Выделяем весь текст для удобства редактирования
+            document.getElementById('numberInput').select();
         }
         
         function confirmNumber() {
             let value = document.getElementById('numberInput').value.trim();
-            value = value.replace(',', '.');
+            
+            // Заменяем запятую на точку (дополнительная защита)
+            value = value.replace(/,/g, '.');
+            
+            // Проверяем, что значение - корректное число
             const numericValue = parseFloat(value);
             
             if (currentEdit.index !== -1) {
@@ -740,7 +793,7 @@
                 } else if (value === '') {
                     stockData.products[currentEdit.index][currentEdit.field] = 0;
                 } else {
-                    alert('Пожалуйста, введите корректное число');
+                    alert('Пожалуйста, введите корректное число (используйте точку для дробей)');
                     return;
                 }
                 initTable();
@@ -800,7 +853,7 @@
                 
                 if (!categoryExists) {
                     const newCategory = {
-                        id: Date.now(), // Временный ID
+                        id: Date.now(),
                         name: category,
                         order_index: stockData.categories.length + 1
                     };
@@ -834,13 +887,13 @@
                 
                 // Добавляем продукт
                 const newProduct = {
-                    id: Date.now(), // Временный ID
+                    id: Date.now(),
                     category_id: categoryObj.id,
                     name: name,
                     volume: parseInt(volume),
                     bar1: 0,
                     bar2: 0,
-                    cold_room: 0, // Добавляем поле cold_room с значением по умолчанию 0
+                    cold_room: 0,
                     category_name: category
                 };
                 
@@ -859,9 +912,12 @@
             stockData.products.forEach(product => {
                 const category = `"${(product.category_name || 'Без категории').replace(/"/g, '""')}"`;
                 const name = `"${product.name.replace(/"/g, '""')}"`;
-                const bar1 = (product.bar1 || 0).toString().replace(',', '.');
-                const bar2 = (product.bar2 || 0).toString().replace(',', '.');
-                const cold_room = (product.cold_room || 0).toString().replace(',', '.');
+                
+                // Убеждаемся, что значения используют точку вместо запятой
+                const bar1 = (product.bar1 || 0).toString().replace(/,/g, '.');
+                const bar2 = (product.bar2 || 0).toString().replace(/,/g, '.');
+                const cold_room = (product.cold_room || 0).toString().replace(/,/g, '.');
+                
                 csv += `${category};${name};${product.volume};${bar1};${bar2};${cold_room}\r\n`;
             });
             
@@ -887,13 +943,30 @@
                 if (supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
                     await loadFromSupabase();
                 } else {
-                    // Если нет Supabase, показываем пустую таблицу
                     showNotification('Настройте подключение к Supabase', 'info');
                     initTable();
                 }
             }
             
             setupSearch();
+            
+            // Настройка обработчиков для поля ввода числа
+            const numberInput = document.getElementById('numberInput');
+            
+            // Обработчик для замены запятой на точку в реальном времени
+            numberInput.addEventListener('input', replaceCommaWithDot);
+            
+            // Обработчик для блокировки ввода запятой
+            numberInput.addEventListener('keydown', validateNumberInput);
+            
+            // Обработчик для вставки из буфера обмена
+            numberInput.addEventListener('paste', function(e) {
+                // Даем браузеру вставить текст
+                setTimeout(() => {
+                    // Затем заменяем запятые на точки
+                    replaceCommaWithDot({target: this});
+                }, 0);
+            });
             
             // Закрытие модальных окон
             window.onclick = function(event) {
